@@ -13,11 +13,11 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Exam Timer" />
   <Description DefaultValue="A countdown timer for exams and presentations. Shows time remaining with visual alerts." />
-  <SupportUrl DefaultValue="https://github.com/yourusername/exam-timer-addin" />
+  <SupportUrl DefaultValue="https://github.com/gayalk12-boop/exam-timer-addin" />
 
   <!-- Icons (replace paths with your hosted URLs when publishing) -->
-  <IconUrl DefaultValue="https://raw.githubusercontent.com/yourusername/exam-timer-addin/main/assets/icon-32.png" />
-  <HighResolutionIconUrl DefaultValue="https://raw.githubusercontent.com/yourusername/exam-timer-addin/main/assets/icon-80.png" />
+  <IconUrl DefaultValue="https://raw.githubusercontent.com/gayalk12-boop/exam-timer-addin/main/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://raw.githubusercontent.com/gayalk12-boop/exam-timer-addin/main/assets/icon-80.png" />
 
   <!-- Permissions -->
   <Permissions>ReadWriteDocument</Permissions>
@@ -29,7 +29,7 @@
 
   <!-- Default task pane settings -->
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://yourusername.github.io/exam-timer-addin/taskpane/taskpane.html" />
+    <SourceLocation DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/taskpane/taskpane.html" />
   </DefaultSettings>
 
   <!-- Version overrides for ribbon button -->
@@ -79,14 +79,14 @@
 
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16"  DefaultValue="https://yourusername.github.io/exam-timer-addin/assets/icon-16.png" />
-        <bt:Image id="Icon.32x32"  DefaultValue="https://yourusername.github.io/exam-timer-addin/assets/icon-32.png" />
-        <bt:Image id="Icon.80x80"  DefaultValue="https://yourusername.github.io/exam-timer-addin/assets/icon-80.png" />
+        <bt:Image id="Icon.16x16"  DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/assets/icon-16.png" />
+        <bt:Image id="Icon.32x32"  DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/assets/icon-32.png" />
+        <bt:Image id="Icon.80x80"  DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/assets/icon-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="GetStarted.LearnMoreUrl"  DefaultValue="https://github.com/yourusername/exam-timer-addin" />
-        <bt:Url id="Commands.Url"             DefaultValue="https://yourusername.github.io/exam-timer-addin/taskpane/commands.html" />
-        <bt:Url id="Taskpane.Url"             DefaultValue="https://yourusername.github.io/exam-timer-addin/taskpane/taskpane.html" />
+        <bt:Url id="GetStarted.LearnMoreUrl"  DefaultValue="https://github.com/gayalk12-boop/exam-timer-addin" />
+        <bt:Url id="Commands.Url"             DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/taskpane/commands.html" />
+        <bt:Url id="Taskpane.Url"             DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/taskpane/taskpane.html" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title"         DefaultValue="Get started with Exam Timer" />
