@@ -3,100 +3,38 @@
   xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
-  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
-  xsi:type="TaskPaneApp">
+  xsi:type="ContentApp">
 
-  <!-- App identity -->
-  <Id>8f3b2c1a-7d4e-4f9a-b6c2-1e5d8a3f7b9c</Id>
-  <Version>1.0.0.0</Version>
-  <ProviderName>ExamTimer</ProviderName>
+  <Id>22334455-6677-8899-aabb-ccddeeff0011</Id>
+  <Version>2.0.0.0</Version>
+  <ProviderName>gayalk12-boop</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Exam Timer" />
-  <Description DefaultValue="A countdown timer for exams and presentations. Shows time remaining with visual alerts." />
+  <Description DefaultValue="A live countdown timer that runs directly on your PowerPoint slide. Perfect for exams and timed sessions." />
+  <IconUrl DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/assets/icon-80.png" />
   <SupportUrl DefaultValue="https://github.com/gayalk12-boop/exam-timer-addin" />
 
-  <!-- Icons (replace paths with your hosted URLs when publishing) -->
-  <IconUrl DefaultValue="https://raw.githubusercontent.com/gayalk12-boop/exam-timer-addin/main/assets/icon-32.png" />
-  <HighResolutionIconUrl DefaultValue="https://raw.githubusercontent.com/gayalk12-boop/exam-timer-addin/main/assets/icon-80.png" />
+  <AppDomains>
+    <AppDomain>https://gayalk12-boop.github.io</AppDomain>
+  </AppDomains>
 
-  <!-- Permissions -->
-  <Permissions>ReadWriteDocument</Permissions>
-
-  <!-- Hosts: PowerPoint only -->
   <Hosts>
     <Host Name="Presentation" />
   </Hosts>
 
-  <!-- Default task pane settings -->
+  <Requirements>
+    <Sets>
+      <Set Name="Selection" MinVersion="1.1" />
+    </Sets>
+  </Requirements>
+
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/taskpane/taskpane.html" />
+    <SourceLocation DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/timer.html" />
+    <RequestedWidth>600</RequestedWidth>
+    <RequestedHeight>400</RequestedHeight>
   </DefaultSettings>
 
-  <!-- Version overrides for ribbon button -->
-  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
-    <Hosts>
-      <Host xsi:type="Presentation">
-        <DesktopFormFactor>
-          <GetStarted>
-            <Title resid="GetStarted.Title" />
-            <Description resid="GetStarted.Description" />
-            <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
-          </GetStarted>
-          <FunctionFile resid="Commands.Url" />
+  <Permissions>ReadWriteDocument</Permissions>
 
-          <!-- Slide Show tab ribbon button -->
-          <ExtensionPoint xsi:type="PresentationCommandSurface">
-            <OfficeTab id="TabSlideShow">
-              <Group id="CommandsGroup">
-                <Label resid="CommandsGroup.Label" />
-                <Icon>
-                  <bt:Image size="16" resid="Icon.16x16" />
-                  <bt:Image size="32" resid="Icon.32x32" />
-                  <bt:Image size="80" resid="Icon.80x80" />
-                </Icon>
-                <Control xsi:type="Button" id="OpenTimerButton">
-                  <Label resid="OpenTimerButton.Label" />
-                  <Supertip>
-                    <Title resid="OpenTimerButton.Label" />
-                    <Description resid="OpenTimerButton.Tooltip" />
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16x16" />
-                    <bt:Image size="32" resid="Icon.32x32" />
-                    <bt:Image size="80" resid="Icon.80x80" />
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>ButtonId1</TaskpaneId>
-                    <SourceLocation resid="Taskpane.Url" />
-                  </Action>
-                </Control>
-              </Group>
-            </OfficeTab>
-          </ExtensionPoint>
-        </DesktopFormFactor>
-      </Host>
-    </Hosts>
-
-    <Resources>
-      <bt:Images>
-        <bt:Image id="Icon.16x16"  DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/assets/icon-16.png" />
-        <bt:Image id="Icon.32x32"  DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/assets/icon-32.png" />
-        <bt:Image id="Icon.80x80"  DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/assets/icon-80.png" />
-      </bt:Images>
-      <bt:Urls>
-        <bt:Url id="GetStarted.LearnMoreUrl"  DefaultValue="https://github.com/gayalk12-boop/exam-timer-addin" />
-        <bt:Url id="Commands.Url"             DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/taskpane/commands.html" />
-        <bt:Url id="Taskpane.Url"             DefaultValue="https://gayalk12-boop.github.io/exam-timer-addin/taskpane/taskpane.html" />
-      </bt:Urls>
-      <bt:ShortStrings>
-        <bt:String id="GetStarted.Title"         DefaultValue="Get started with Exam Timer" />
-        <bt:String id="CommandsGroup.Label"      DefaultValue="Exam Timer" />
-        <bt:String id="OpenTimerButton.Label"    DefaultValue="Open Timer" />
-      </bt:ShortStrings>
-      <bt:LongStrings>
-        <bt:String id="GetStarted.Description"   DefaultValue="Launch the exam countdown timer from the Slide Show tab." />
-        <bt:String id="OpenTimerButton.Tooltip"  DefaultValue="Open the Exam Timer task pane to set and run a countdown." />
-      </bt:LongStrings>
-    </Resources>
-  </VersionOverrides>
 </OfficeApp>
