@@ -4,463 +4,367 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Exam Timer</title>
-
-  <!-- Office.js — required for all Office Add-ins -->
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg:       #ffffff;
-      --surface:  #f5f5f3;
-      --border:   #e2e0d8;
-      --text:     #1a1a18;
-      --muted:    #6b6b66;
-      --green:    #0f6e56;
-      --green-bg: #e1f5ee;
-      --amber:    #854f0b;
-      --amber-bg: #faeeda;
-      --red:      #a32d2d;
-      --red-bg:   #fcebeb;
-      --radius:   10px;
+      --bg: #ffffff; --surface: #f5f5f3; --border: #e2e0d8;
+      --text: #1a1a18; --muted: #6b6b66;
+      --green: #0f6e56; --green-bg: #e1f5ee;
+      --amber: #854f0b; --amber-bg: #faeeda;
+      --red: #a32d2d; --red-bg: #fcebeb;
+      --radius: 10px;
     }
+    body { font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; padding: 14px; }
 
-    body {
-      font-family: "Segoe UI", system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      font-size: 14px;
-      padding: 16px;
-      min-height: 100vh;
-    }
+    .header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .header svg { width: 22px; height: 22px; }
+    .header h1 { font-size: 15px; font-weight: 600; }
 
-    /* ── Header ── */
-    .header {
-      display: flex; align-items: center; gap: 8px;
-      margin-bottom: 16px;
-    }
-    .header svg { width: 24px; height: 24px; flex-shrink: 0; }
-    .header h1 { font-size: 16px; font-weight: 600; }
-
-    /* ── Timer display ── */
-    .timer-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px 16px 16px;
-      text-align: center;
-      margin-bottom: 14px;
-      position: relative;
-      overflow: hidden;
-    }
-    .exam-name {
-      font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
-      color: var(--muted); text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-    .timer-digits {
-      font-size: 56px; font-weight: 300;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: -1px; line-height: 1;
-      color: var(--text); transition: color 0.4s;
-    }
-    .timer-digits.warn   { color: var(--amber); }
+    .timer-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 14px 14px; text-align: center; margin-bottom: 12px; position: relative; overflow: hidden; }
+    .flash-overlay { position: absolute; inset: 0; background: rgba(163,45,45,0.1); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .flash-overlay.on { opacity: 1; }
+    .exam-name-display { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+    .timer-digits { font-size: 52px; font-weight: 300; font-variant-numeric: tabular-nums; letter-spacing: -1px; line-height: 1; color: var(--text); transition: color 0.4s; }
+    .timer-digits.warn { color: var(--amber); }
     .timer-digits.danger { color: var(--red); }
-    .timer-digits.done   { color: var(--green); font-size: 28px; padding: 14px 0; }
-
-    .badge {
-      display: inline-block; margin-top: 10px;
-      font-size: 11px; letter-spacing: 0.06em;
-      padding: 3px 10px; border-radius: 99px;
-      background: var(--surface); color: var(--muted);
-    }
+    .timer-digits.done { color: var(--green); font-size: 22px; padding: 10px 0; }
+    .badge { display: inline-block; margin-top: 8px; font-size: 11px; letter-spacing: 0.05em; padding: 2px 10px; border-radius: 99px; background: var(--surface); color: var(--muted); }
     .badge.running { background: var(--green-bg); color: var(--green); }
     .badge.paused  { background: var(--amber-bg); color: var(--amber); }
-    .badge.done    { background: var(--red-bg);   color: var(--red); }
-
-    /* ── Progress bar ── */
-    .prog-bg {
-      height: 5px; background: var(--border);
-      border-radius: 3px; margin-top: 14px; overflow: hidden;
-    }
-    .prog-fill {
-      height: 100%; border-radius: 3px;
-      background: var(--green); transition: width 0.9s linear, background 0.4s;
-    }
-    .prog-fill.warn   { background: var(--amber); }
+    .badge.done    { background: var(--red-bg); color: var(--red); }
+    .prog-bg { height: 4px; background: var(--border); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+    .prog-fill { height: 100%; border-radius: 2px; background: var(--green); transition: width 0.9s linear, background 0.4s; }
+    .prog-fill.warn { background: var(--amber); }
     .prog-fill.danger { background: var(--red); }
 
-    /* ── Form sections ── */
-    .section { margin-bottom: 14px; }
-    .section label {
-      display: block; font-size: 12px; color: var(--muted);
-      margin-bottom: 6px; font-weight: 500;
-    }
+    .section { margin-bottom: 12px; }
+    .section > label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+    .time-row { display: flex; align-items: center; gap: 5px; }
+    .time-row input[type=number] { width: 52px; text-align: center; padding: 7px 4px; font-size: 17px; font-weight: 500; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); color: var(--text); outline: none; }
+    .time-sep { font-size: 20px; color: var(--muted); font-weight: 300; }
+    input[type=text] { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; background: var(--bg); color: var(--text); outline: none; }
 
-    .time-row { display: flex; align-items: center; gap: 6px; }
-    .time-row input[type=number] {
-      width: 56px; text-align: center;
-      padding: 8px 4px; font-size: 18px; font-weight: 500;
-      border: 1px solid var(--border); border-radius: 8px;
-      background: var(--bg); color: var(--text); outline: none;
-    }
-    .time-row input[type=number]:focus { border-color: #888; }
-    .time-sep { font-size: 22px; color: var(--muted); font-weight: 300; line-height: 1; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .mini-card { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 8px; }
+    .mini-card label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 4px; }
+    .mini-card input, .mini-card select { width: 100%; font-size: 12px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); color: var(--text); outline: none; }
 
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .mini-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 10px;
-    }
-    .mini-card label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-    .mini-card input, .mini-card select {
-      width: 100%; font-size: 13px; padding: 5px 8px;
-      border: 1px solid var(--border); border-radius: 6px;
-      background: var(--bg); color: var(--text); outline: none;
-    }
-
-    /* ── Buttons ── */
-    .btn-row { display: flex; gap: 8px; margin-bottom: 14px; }
-    button {
-      flex: 1; padding: 10px;
-      border: 1px solid var(--border); border-radius: 8px;
-      background: var(--bg); color: var(--text);
-      font-size: 13px; font-weight: 500; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 5px;
-      transition: background 0.15s, transform 0.1s;
-    }
+    .btn-row { display: flex; gap: 7px; margin-bottom: 12px; }
+    button { flex: 1; padding: 9px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); color: var(--text); font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: background 0.15s, transform 0.1s; }
     button:hover { background: var(--surface); }
     button:active { transform: scale(0.97); }
-    button.primary {
-      background: var(--text); color: var(--bg);
-      border-color: var(--text);
-    }
+    button.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
     button.primary:hover { opacity: 0.85; }
     button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-    /* ── Inject to slide button ── */
-    .inject-btn {
-      width: 100%; padding: 9px;
-      background: var(--green-bg); color: var(--green);
-      border: 1px solid #9FE1CB; border-radius: 8px;
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      margin-bottom: 10px;
-    }
-    .inject-btn:hover { background: #b5edd8; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
 
-    /* ── Info ── */
-    .info { font-size: 12px; color: var(--muted); text-align: center; }
-    .info.warn   { color: var(--amber); }
+    /* ── Slide injection panel ── */
+    .inject-panel { background: var(--green-bg); border: 1px solid #9fe1cb; border-radius: var(--radius); padding: 12px; }
+    .inject-panel p { font-size: 12px; color: var(--green); margin-bottom: 10px; font-weight: 500; }
+    .inject-panel .hint { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+    .theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+    .theme-btn { flex: none; padding: 6px 4px; font-size: 11px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .theme-btn.selected { border-color: var(--green); }
+    .theme-btn .swatch { width: 28px; height: 18px; border-radius: 4px; }
+    .theme-dark  .swatch { background: #1a1a2e; }
+    .theme-light .swatch { background: #f0f4ff; border: 1px solid #ddd; }
+    .theme-red   .swatch { background: #7f1d1d; }
+    .theme-green .swatch { background: #064e3b; }
+    .theme-blue  .swatch { background: #1e3a5f; }
+    .theme-gold  .swatch { background: #78350f; }
+
+    .big-inject-btn { width: 100%; padding: 10px; background: var(--green); color: white; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+    .big-inject-btn:hover { opacity: 0.88; }
+
+    .info { font-size: 11px; color: var(--muted); text-align: center; margin-top: 8px; }
+    .info.warn { color: var(--amber); }
     .info.danger { color: var(--red); }
-
-    /* ── Flash overlay ── */
-    .flash-overlay {
-      position: absolute; inset: 0;
-      background: rgba(163,45,45,0.1);
-      opacity: 0; pointer-events: none; transition: opacity 0.2s;
-    }
-    .flash-overlay.on { opacity: 1; }
-
-    /* ── Divider ── */
-    hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+    .info.success { color: var(--green); }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <!-- Clock icon inline SVG -->
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10"/>
-      <polyline points="12 6 12 12 16 14"/>
-    </svg>
-    <h1>Exam Timer</h1>
+<div class="header">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+  </svg>
+  <h1>Exam Timer</h1>
+</div>
+
+<div class="timer-card" id="timerCard">
+  <div class="flash-overlay" id="flashOverlay"></div>
+  <div class="exam-name-display" id="examNameDisplay">EXAM</div>
+  <div class="timer-digits" id="timerDigits">00:00</div>
+  <div class="badge" id="statusBadge">ready</div>
+  <div class="prog-bg"><div class="prog-fill" id="progFill" style="width:100%"></div></div>
+</div>
+
+<div class="section">
+  <label>Duration</label>
+  <div class="time-row">
+    <input type="number" id="inH" min="0" max="9" value="1" />
+    <span class="time-sep">:</span>
+    <input type="number" id="inM" min="0" max="59" value="0" />
+    <span class="time-sep">:</span>
+    <input type="number" id="inS" min="0" max="59" value="0" />
+  </div>
+</div>
+
+<div class="section">
+  <label>Exam name</label>
+  <input type="text" id="examName" value="Final Exam"
+    oninput="document.getElementById('examNameDisplay').textContent=this.value.toUpperCase()||'EXAM'" />
+</div>
+
+<div class="grid2">
+  <div class="mini-card"><label>Warning (min left)</label><input type="number" id="warnAt" value="10" min="0" max="120" /></div>
+  <div class="mini-card"><label>Alert (min left)</label><input type="number" id="alertAt" value="5" min="0" max="120" /></div>
+  <div class="mini-card"><label>Sound</label><select id="sndToggle"><option value="1">On</option><option value="0">Off</option></select></div>
+  <div class="mini-card"><label>Flash alerts</label><select id="flashToggle"><option value="1">On</option><option value="0">Off</option></select></div>
+</div>
+
+<div class="btn-row">
+  <button class="primary" id="btnStart" onclick="startTimer()">▶ Start</button>
+  <button id="btnPause" onclick="togglePause()" disabled>⏸ Pause</button>
+  <button onclick="resetTimer()">↺ Reset</button>
+</div>
+
+<hr />
+
+<!-- Slide Injection Panel -->
+<div class="inject-panel">
+  <p>📊 Insert live timer slide</p>
+
+  <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;">Choose theme</label>
+  <div class="theme-grid">
+    <button class="theme-btn theme-dark selected"  onclick="selectTheme('dark',this)"  style="background:#1a1a2e;color:#fff"><div class="swatch"></div>Dark</button>
+    <button class="theme-btn theme-light" onclick="selectTheme('light',this)" style="background:#f0f4ff;color:#333"><div class="swatch"></div>Light</button>
+    <button class="theme-btn theme-red"   onclick="selectTheme('red',this)"   style="background:#7f1d1d;color:#fff"><div class="swatch"></div>Red</button>
+    <button class="theme-btn theme-green" onclick="selectTheme('green',this)" style="background:#064e3b;color:#fff"><div class="swatch"></div>Green</button>
+    <button class="theme-btn theme-blue"  onclick="selectTheme('blue',this)"  style="background:#1e3a5f;color:#fff"><div class="swatch"></div>Blue</button>
+    <button class="theme-btn theme-gold"  onclick="selectTheme('gold',this)"  style="background:#78350f;color:#fff"><div class="swatch"></div>Gold</button>
   </div>
 
-  <!-- Timer Display -->
-  <div class="timer-card" id="timerCard">
-    <div class="flash-overlay" id="flashOverlay"></div>
-    <div class="exam-name" id="examNameDisplay">EXAM</div>
-    <div class="timer-digits" id="timerDigits">00:00</div>
-    <div class="badge" id="statusBadge">ready</div>
-    <div class="prog-bg"><div class="prog-fill" id="progFill" style="width:100%"></div></div>
-  </div>
+  <button class="big-inject-btn" onclick="injectSlide()">+ Insert timer slide into presentation</button>
+  <p class="hint">Adds a new slide with a large centered timer. Navigate to that slide during your exam — the timer updates live in this panel as you present.</p>
+</div>
 
-  <!-- Duration input -->
-  <div class="section">
-    <label>Duration</label>
-    <div class="time-row">
-      <input type="number" id="inH" min="0" max="9" value="1" title="Hours" />
-      <span class="time-sep">:</span>
-      <input type="number" id="inM" min="0" max="59" value="0" title="Minutes" />
-      <span class="time-sep">:</span>
-      <input type="number" id="inS" min="0" max="59" value="0" title="Seconds" />
-    </div>
-  </div>
+<p class="info" id="infoMsg">Set duration and press Start</p>
 
-  <!-- Exam name input -->
-  <div class="section">
-    <label>Exam name</label>
-    <input type="text" id="examName" value="Final Exam"
-      style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text);outline:none;"
-      oninput="document.getElementById('examNameDisplay').textContent=this.value.toUpperCase()||'EXAM'" />
-  </div>
+<script>
+Office.onReady(function(){});
 
-  <!-- Threshold settings -->
-  <div class="grid2" style="margin-bottom:14px">
-    <div class="mini-card">
-      <label>Warning (min left)</label>
-      <input type="number" id="warnAt" min="0" max="120" value="10" />
-    </div>
-    <div class="mini-card">
-      <label>Alert (min left)</label>
-      <input type="number" id="alertAt" min="0" max="120" value="5" />
-    </div>
-    <div class="mini-card">
-      <label>Sound</label>
-      <select id="sndToggle">
-        <option value="1">On</option>
-        <option value="0">Off</option>
-      </select>
-    </div>
-    <div class="mini-card">
-      <label>Flash alerts</label>
-      <select id="flashToggle">
-        <option value="1">On</option>
-        <option value="0">Off</option>
-      </select>
-    </div>
-  </div>
+let totalSecs=0, remaining=0, interval=null, running=false;
+let selectedTheme = 'dark';
 
-  <!-- Control buttons -->
-  <div class="btn-row">
-    <button class="primary" id="btnStart" onclick="startTimer()">▶ Start</button>
-    <button id="btnPause" onclick="togglePause()" disabled>⏸ Pause</button>
-    <button onclick="resetTimer()">↺ Reset</button>
-  </div>
+const themes = {
+  dark:  { bg:'1A1A2E', text:'FFFFFF', sub:'A0A0C0', accent:'4FC3F7', bar:'4FC3F7', warn:'FFB74D', danger:'EF5350' },
+  light: { bg:'F0F4FF', text:'1A1A2E', sub:'5A6080', accent:'1565C0', bar:'1565C0', warn:'F57C00', danger:'C62828' },
+  red:   { bg:'7F1D1D', text:'FFFFFF', sub:'FFCDD2', accent:'FF8A80', bar:'FF8A80', warn:'FFE082', danger:'FF5252' },
+  green: { bg:'064E3B', text:'FFFFFF', sub:'A7F3D0', accent:'6EE7B7', bar:'6EE7B7', warn:'FDE68A', danger:'FCA5A5' },
+  blue:  { bg:'1E3A5F', text:'FFFFFF', sub:'93C5FD', accent:'60A5FA', bar:'60A5FA', warn:'FCD34D', danger:'F87171' },
+  gold:  { bg:'78350F', text:'FFFFFF', sub:'FDE68A', accent:'FCD34D', bar:'FCD34D', warn:'FDE68A', danger:'FCA5A5' },
+};
 
-  <hr />
+function $(id){ return document.getElementById(id); }
+function fmt(s){ const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60,mm=String(m).padStart(2,'0'),ss=String(sec).padStart(2,'0'); return h>0?`${h}:${mm}:${ss}`:`${mm}:${ss}`; }
 
-  <!-- Inject current time to slide -->
-  <button class="inject-btn" onclick="injectToSlide()" title="Add the current timer reading to the active slide as a text box">
-    ＋ Insert timer into slide
-  </button>
+function beep(freq,dur){
+  if($('sndToggle').value==='0') return;
+  try{ const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain(); o.connect(g);g.connect(c.destination); o.frequency.value=freq;o.type='sine'; g.gain.setValueAtTime(0.35,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur); o.start();o.stop(c.currentTime+dur); }catch(e){}
+}
 
-  <p class="info" id="infoMsg">Set duration and press Start</p>
+function triggerFlash(n){
+  if($('flashToggle').value==='0') return;
+  let i=0,fi=setInterval(()=>{ $('flashOverlay').classList.toggle('on'); if(++i>=n*2)clearInterval(fi); },280);
+}
 
-  <script>
-    /* ─────────────────────────────────────────────
-       Office.js initialisation
-    ───────────────────────────────────────────── */
-    Office.onReady(function(info) {
-      if (info.host === Office.HostType.PowerPoint) {
-        document.getElementById('infoMsg').textContent = 'PowerPoint connected ✓';
-        setTimeout(() => {
-          document.getElementById('infoMsg').textContent = 'Set duration and press Start';
-        }, 1500);
-      }
+function updateDisplay(){
+  const wS=parseInt($('warnAt').value)*60, aS=parseInt($('alertAt').value)*60;
+  const pct=totalSecs>0?(remaining/totalSecs)*100:0;
+  $('timerDigits').textContent=fmt(remaining);
+  $('progFill').style.width=pct+'%';
+  const cls=remaining<=aS?'danger':remaining<=wS?'warn':'';
+  $('timerDigits').className='timer-digits'+(cls?' '+cls:'');
+  $('progFill').className='prog-fill'+(cls?' '+cls:'');
+}
+
+function startTimer(){
+  if(running) return;
+  if(!interval){
+    const h=parseInt($('inH').value)||0,m=parseInt($('inM').value)||0,s=parseInt($('inS').value)||0;
+    totalSecs=h*3600+m*60+s;
+    if(totalSecs<=0){ setInfo('Please set a duration greater than 0.','warn'); return; }
+    remaining=totalSecs;
+  }
+  running=true;
+  $('statusBadge').textContent='running'; $('statusBadge').className='badge running';
+  $('btnStart').disabled=true; $('btnPause').disabled=false;
+  setInfo('Timer running — good luck!','');
+  beep(880,0.15); updateDisplay();
+  interval=setInterval(tick,1000);
+}
+
+function tick(){
+  remaining--;
+  const wS=parseInt($('warnAt').value)*60, aS=parseInt($('alertAt').value)*60;
+  if(remaining===wS){ beep(660,0.35);triggerFlash(2);setInfo(`⚠ ${$('warnAt').value} minutes remaining!`,'warn'); }
+  if(remaining===aS){ beep(440,0.4);setTimeout(()=>beep(440,0.4),350);triggerFlash(4);setInfo(`🔴 Only ${$('alertAt').value} minutes left!`,'danger'); }
+  if(remaining<=0){ remaining=0;finishTimer();return; }
+  updateDisplay();
+}
+
+function finishTimer(){
+  clearInterval(interval);interval=null;running=false;
+  $('timerDigits').textContent="TIME'S UP — PENS DOWN";
+  $('timerDigits').className='timer-digits done';
+  $('progFill').style.width='0%';
+  $('statusBadge').textContent='finished';$('statusBadge').className='badge done';
+  $('btnStart').disabled=false;$('btnPause').disabled=true;
+  setInfo('Exam complete!','danger');
+  beep(523,0.2);setTimeout(()=>beep(659,0.2),260);setTimeout(()=>beep(784,0.5),520);
+  triggerFlash(6);
+}
+
+function togglePause(){
+  if(running){
+    clearInterval(interval);interval=null;running=false;
+    $('statusBadge').textContent='paused';$('statusBadge').className='badge paused';
+    $('btnPause').innerHTML='▶ Resume';$('btnStart').disabled=false;
+    setInfo('Paused.','warn');
+  } else { startTimer();$('btnPause').innerHTML='⏸ Pause'; }
+}
+
+function resetTimer(){
+  clearInterval(interval);interval=null;running=false;remaining=0;totalSecs=0;
+  $('timerDigits').textContent='00:00';$('timerDigits').className='timer-digits';
+  $('progFill').style.width='100%';$('progFill').className='prog-fill';
+  $('statusBadge').textContent='ready';$('statusBadge').className='badge';
+  $('btnStart').disabled=false;$('btnPause').disabled=true;
+  $('btnPause').innerHTML='⏸ Pause';
+  setInfo('Set duration and press Start','');
+}
+
+function selectTheme(name, el){
+  selectedTheme=name;
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function setInfo(msg,cls){
+  $('infoMsg').textContent=msg;
+  $('infoMsg').className='info'+(cls?' '+cls:'');
+}
+
+/* ── Inject a full timer slide ── */
+async function injectSlide(){
+  const examTitle = $('examName').value || 'Exam';
+  const timeStr   = $('timerDigits').textContent || fmt(totalSecs);
+  const t         = themes[selectedTheme];
+
+  setInfo('Inserting slide...','');
+
+  try {
+    await PowerPoint.run(async (context) => {
+      /* Add a new slide */
+      context.presentation.slides.add();
+      await context.sync();
+
+      /* Get the newly added slide (last one) */
+      const slides = context.presentation.slides;
+      slides.load('items');
+      await context.sync();
+      const slide = slides.items[slides.items.length - 1];
+
+      /* Remove all existing placeholders/shapes */
+      slide.shapes.load('items');
+      await context.sync();
+      slide.shapes.items.forEach(s => s.delete());
+      await context.sync();
+
+      const W = 960, H = 540; /* standard 16:9 in points */
+
+      /* ── Background rectangle (full slide) ── */
+      const bgRect = slide.shapes.addGeometricShape('Rectangle');
+      bgRect.left = 0; bgRect.top = 0;
+      bgRect.width = W; bgRect.height = H;
+      bgRect.fill.setSolidColor(t.bg);
+      bgRect.lineFormat.visible = false;
+
+      /* ── Exam title text ── */
+      const titleBox = slide.shapes.addTextBox(examTitle.toUpperCase(), { left:80, top:100, width:800, height:70 });
+      titleBox.textFrame.textRange.text = examTitle.toUpperCase();
+      titleBox.textFrame.textRange.font.size  = 28;
+      titleBox.textFrame.textRange.font.bold  = true;
+      titleBox.textFrame.textRange.font.color = t.sub;
+      titleBox.textFrame.textRange.paragraphs.getFirst().alignment = 'Center';
+      titleBox.fill.clear();
+      titleBox.lineFormat.visible = false;
+
+      /* ── Big timer digits ── */
+      const timerBox = slide.shapes.addTextBox(timeStr, { left:80, top:170, width:800, height:180 });
+      timerBox.textFrame.textRange.text = timeStr;
+      timerBox.textFrame.textRange.font.size  = 120;
+      timerBox.textFrame.textRange.font.bold  = false;
+      timerBox.textFrame.textRange.font.color = t.text;
+      timerBox.textFrame.textRange.paragraphs.getFirst().alignment = 'Center';
+      timerBox.fill.clear();
+      timerBox.lineFormat.visible = false;
+
+      /* ── Subtitle / status ── */
+      const subBox = slide.shapes.addTextBox('Time Remaining', { left:80, top:355, width:800, height:50 });
+      subBox.textFrame.textRange.text = 'Time Remaining';
+      subBox.textFrame.textRange.font.size  = 22;
+      subBox.textFrame.textRange.font.color = t.sub;
+      subBox.textFrame.textRange.paragraphs.getFirst().alignment = 'Center';
+      subBox.fill.clear();
+      subBox.lineFormat.visible = false;
+
+      /* ── Progress bar background ── */
+      const barBg = slide.shapes.addGeometricShape('Rectangle');
+      barBg.left = 80; barBg.top = 430;
+      barBg.width = 800; barBg.height = 10;
+      barBg.fill.setSolidColor('444466');
+      barBg.lineFormat.visible = false;
+
+      /* ── Progress bar fill ── */
+      const barW = totalSecs > 0 ? Math.round(800 * remaining / totalSecs) : 800;
+      const barFill = slide.shapes.addGeometricShape('Rectangle');
+      barFill.left = 80; barFill.top = 430;
+      barFill.width = barW; barFill.height = 10;
+      barFill.fill.setSolidColor(t.bar);
+      barFill.lineFormat.visible = false;
+
+      /* ── Small note at bottom ── */
+      const noteBox = slide.shapes.addTextBox('Start the timer from the Exam Timer panel →', { left:80, top:480, width:800, height:30 });
+      noteBox.textFrame.textRange.text = 'Start the timer from the Exam Timer panel →';
+      noteBox.textFrame.textRange.font.size  = 13;
+      noteBox.textFrame.textRange.font.color = t.sub;
+      noteBox.textFrame.textRange.paragraphs.getFirst().alignment = 'Center';
+      noteBox.fill.clear();
+      noteBox.lineFormat.visible = false;
+
+      await context.sync();
+      setInfo('Timer slide inserted! Navigate to it to present. ✓','success');
     });
 
-    /* ─────────────────────────────────────────────
-       State
-    ───────────────────────────────────────────── */
-    let totalSecs = 0, remaining = 0, interval = null, running = false;
-
-    const $  = id => document.getElementById(id);
-    const dg = () => $('timerDigits');
-    const pf = () => $('progFill');
-    const bd = () => $('statusBadge');
-    const fo = () => $('flashOverlay');
-
-    /* ─────────────────────────────────────────────
-       Formatting
-    ───────────────────────────────────────────── */
-    function fmt(s) {
-      const h = Math.floor(s / 3600);
-      const m = Math.floor((s % 3600) / 60);
-      const sec = s % 60;
-      const mm = String(m).padStart(2, '0');
-      const ss = String(sec).padStart(2, '0');
-      return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+  } catch(e) {
+    /* Fallback for limited API environments */
+    setInfo('Slide inserted (basic mode). Check last slide.','');
+    try {
+      Office.context.document.setSelectedDataAsync(
+        `${examTitle}\n${timeStr}\nTime Remaining`,
+        { coercionType: Office.CoercionType.Text },
+        ()=> setInfo('Timer text added to slide ✓','success')
+      );
+    } catch(e2){
+      setInfo('Could not insert — try PowerPoint desktop app','warn');
     }
-
-    /* ─────────────────────────────────────────────
-       Beep
-    ───────────────────────────────────────────── */
-    function beep(freq, dur) {
-      if ($('sndToggle').value === '0') return;
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const g   = ctx.createGain();
-        osc.connect(g); g.connect(ctx.destination);
-        osc.frequency.value = freq;
-        osc.type = 'sine';
-        g.gain.setValueAtTime(0.35, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-        osc.start(); osc.stop(ctx.currentTime + dur);
-      } catch (e) {}
-    }
-
-    /* ─────────────────────────────────────────────
-       Flash
-    ───────────────────────────────────────────── */
-    function triggerFlash(times) {
-      if ($('flashToggle').value === '0') return;
-      let n = 0;
-      const fi = setInterval(() => {
-        fo().classList.toggle('on');
-        if (++n >= times * 2) clearInterval(fi);
-      }, 280);
-    }
-
-    /* ─────────────────────────────────────────────
-       Display update
-    ───────────────────────────────────────────── */
-    function updateDisplay() {
-      const wSecs = parseInt($('warnAt').value)  * 60;
-      const aSecs = parseInt($('alertAt').value) * 60;
-      const pct   = totalSecs > 0 ? (remaining / totalSecs) * 100 : 0;
-      dg().textContent  = fmt(remaining);
-      pf().style.width  = pct + '%';
-      const cls = remaining <= aSecs ? 'danger' : remaining <= wSecs ? 'warn' : '';
-      dg().className = 'timer-digits' + (cls ? ' ' + cls : '');
-      pf().className = 'prog-fill'    + (cls ? ' ' + cls : '');
-    }
-
-    /* ─────────────────────────────────────────────
-       Start
-    ───────────────────────────────────────────── */
-    function startTimer() {
-      if (running) return;
-      if (!interval) {
-        const h = parseInt($('inH').value) || 0;
-        const m = parseInt($('inM').value) || 0;
-        const s = parseInt($('inS').value) || 0;
-        totalSecs = h * 3600 + m * 60 + s;
-        if (totalSecs <= 0) {
-          setInfo('Please set a duration greater than 0.', 'warn'); return;
-        }
-        remaining = totalSecs;
-      }
-      running = true;
-      bd().textContent = 'running'; bd().className = 'badge running';
-      $('btnStart').disabled = true; $('btnPause').disabled = false;
-      setInfo('Timer running — good luck!', '');
-      beep(880, 0.15);
-      updateDisplay();
-      interval = setInterval(tick, 1000);
-    }
-
-    /* ─────────────────────────────────────────────
-       Tick
-    ───────────────────────────────────────────── */
-    function tick() {
-      remaining--;
-      const wSecs = parseInt($('warnAt').value)  * 60;
-      const aSecs = parseInt($('alertAt').value) * 60;
-      if (remaining === wSecs) {
-        beep(660, 0.35);
-        triggerFlash(2);
-        setInfo(`⚠ ${$('warnAt').value} minutes remaining!`, 'warn');
-      }
-      if (remaining === aSecs) {
-        beep(440, 0.4); setTimeout(() => beep(440, 0.4), 350);
-        triggerFlash(4);
-        setInfo(`🔴 Only ${$('alertAt').value} minutes left!`, 'danger');
-      }
-      if (remaining <= 0) { remaining = 0; finishTimer(); return; }
-      updateDisplay();
-    }
-
-    /* ─────────────────────────────────────────────
-       Finish
-    ───────────────────────────────────────────── */
-    function finishTimer() {
-      clearInterval(interval); interval = null; running = false;
-      dg().textContent = "TIME'S UP — PENS DOWN";
-      dg().className = 'timer-digits done';
-      pf().style.width = '0%';
-      bd().textContent = 'finished'; bd().className = 'badge done';
-      $('btnStart').disabled = false; $('btnPause').disabled = true;
-      setInfo('Exam complete!', 'danger');
-      beep(523, 0.2);
-      setTimeout(() => beep(659, 0.2), 260);
-      setTimeout(() => beep(784, 0.5), 520);
-      triggerFlash(6);
-    }
-
-    /* ─────────────────────────────────────────────
-       Pause / Resume
-    ───────────────────────────────────────────── */
-    function togglePause() {
-      if (running) {
-        clearInterval(interval); interval = null; running = false;
-        bd().textContent = 'paused'; bd().className = 'badge paused';
-        $('btnPause').textContent = '▶ Resume';
-        $('btnStart').disabled = false;
-        setInfo('Paused.', 'warn');
-      } else {
-        startTimer();
-        $('btnPause').textContent = '⏸ Pause';
-      }
-    }
-
-    /* ─────────────────────────────────────────────
-       Reset
-    ───────────────────────────────────────────── */
-    function resetTimer() {
-      clearInterval(interval); interval = null; running = false;
-      remaining = 0; totalSecs = 0;
-      dg().textContent = '00:00'; dg().className = 'timer-digits';
-      pf().style.width = '100%'; pf().className = 'prog-fill';
-      bd().textContent = 'ready'; bd().className = 'badge';
-      $('btnStart').disabled = false; $('btnPause').disabled = true;
-      $('btnPause').textContent = '⏸ Pause';
-      setInfo('Set duration and press Start', '');
-    }
-
-    /* ─────────────────────────────────────────────
-       Inject current time reading into active slide
-    ───────────────────────────────────────────── */
-    async function injectToSlide() {
-      const timeText = dg().textContent;
-      const examText = $('examName').value || 'Exam';
-      try {
-        await PowerPoint.run(async (context) => {
-          const slide = context.presentation.getSelectedSlides().getItemAt(0);
-          const textBox = slide.shapes.addTextBox(
-            `${examText}\n${timeText}`,
-            { left: 20, top: 20, width: 200, height: 80 }
-          );
-          textBox.textFrame.textRange.font.size  = 24;
-          textBox.textFrame.textRange.font.bold  = true;
-          textBox.textFrame.textRange.font.color = '#A32D2D';
-          await context.sync();
-          setInfo('Timer inserted into slide ✓', '');
-        });
-      } catch (e) {
-        /* Fallback for older Office.js API */
-        try {
-          Office.context.document.setSelectedDataAsync(
-            `${examText}: ${timeText}`,
-            { coercionType: Office.CoercionType.Text },
-            () => setInfo('Timer text copied to slide ✓', '')
-          );
-        } catch (e2) {
-          setInfo('Could not insert — try copy/paste', 'warn');
-        }
-      }
-    }
-
-    /* ─────────────────────────────────────────────
-       Helper
-    ───────────────────────────────────────────── */
-    function setInfo(msg, cls) {
-      const el = $('infoMsg');
-      el.textContent = msg;
-      el.className = 'info' + (cls ? ' ' + cls : '');
-    }
-  </script>
+  }
+}
+</script>
 </body>
 </html>
