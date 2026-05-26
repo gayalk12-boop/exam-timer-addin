@@ -4,148 +4,79 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Exam Timer</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
     :root{
-      --bg:#0f1117; --text:#ffffff; --sub:rgba(255,255,255,0.4);
-      --accent:#4fc3f7; --warn:#ffb74d; --danger:#ef5350; --done:#66bb6a;
+      --bg:#0f1117;--text:#ffffff;--sub:rgba(255,255,255,0.4);
+      --accent:#4fc3f7;--warn:#ffb74d;--danger:#ef5350;--done:#66bb6a;
       --bar-bg:rgba(255,255,255,0.1);
     }
-    body.light { --bg:#f0f4ff; --text:#1a1a2e; --sub:rgba(0,0,0,0.38); --accent:#1565c0; --warn:#e65100; --danger:#b71c1c; --done:#1b5e20; --bar-bg:rgba(0,0,0,0.1); }
-    body.red   { --bg:#3b0000; --text:#fff; --sub:rgba(255,190,190,0.5); --accent:#ff8a80; --warn:#ffe082; --danger:#ff1744; --done:#69f0ae; --bar-bg:rgba(255,255,255,0.1); }
-    body.green { --bg:#00251a; --text:#fff; --sub:rgba(160,255,200,0.5); --accent:#69f0ae; --warn:#ffd740; --danger:#ff5252; --done:#69f0ae; --bar-bg:rgba(255,255,255,0.1); }
-    body.blue  { --bg:#0d1b2a; --text:#fff; --sub:rgba(150,200,255,0.5); --accent:#60a5fa; --warn:#fcd34d; --danger:#f87171; --done:#34d399; --bar-bg:rgba(255,255,255,0.1); }
-    body.gold  { --bg:#1c0d00; --text:#fff; --sub:rgba(255,215,80,0.5);  --accent:#fcd34d; --warn:#fde68a; --danger:#fca5a5; --done:#6ee7b7; --bar-bg:rgba(255,255,255,0.1); }
+    body.light{--bg:#f0f4ff;--text:#1a1a2e;--sub:rgba(0,0,0,0.38);--accent:#1565c0;--warn:#e65100;--danger:#b71c1c;--done:#1b5e20;--bar-bg:rgba(0,0,0,0.1);}
+    body.red  {--bg:#3b0000;--text:#fff;--sub:rgba(255,190,190,0.5);--accent:#ff8a80;--warn:#ffe082;--danger:#ff1744;--done:#69f0ae;--bar-bg:rgba(255,255,255,0.1);}
+    body.green{--bg:#00251a;--text:#fff;--sub:rgba(160,255,200,0.5);--accent:#69f0ae;--warn:#ffd740;--danger:#ff5252;--done:#69f0ae;--bar-bg:rgba(255,255,255,0.1);}
+    body.blue {--bg:#0d1b2a;--text:#fff;--sub:rgba(150,200,255,0.5);--accent:#60a5fa;--warn:#fcd34d;--danger:#f87171;--done:#34d399;--bar-bg:rgba(255,255,255,0.1);}
+    body.gold {--bg:#1c0d00;--text:#fff;--sub:rgba(255,215,80,0.5);--accent:#fcd34d;--warn:#fde68a;--danger:#fca5a5;--done:#6ee7b7;--bar-bg:rgba(255,255,255,0.1);}
 
-    html,body{
-      width:100%;height:100%;
-      background:var(--bg);
-      color:var(--text);
-      font-family:"Segoe UI",system-ui,sans-serif;
-      overflow:hidden;
-      transition:background 0.5s, color 0.3s;
-    }
+    html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;overflow:hidden;transition:background 0.5s,color 0.3s;}
 
-    /* ── Flash ── */
-    #flash{
-      position:fixed;inset:0;
-      background:var(--danger);
-      opacity:0;pointer-events:none;
-      z-index:50;transition:opacity 0.15s;
-    }
+    #flash{position:fixed;inset:0;background:var(--danger);opacity:0;pointer-events:none;z-index:50;transition:opacity 0.15s;}
     #flash.on{opacity:0.2;}
 
-    /* ── Main layout ── */
-    .wrap{
-      width:100%;height:100%;
-      display:flex;flex-direction:column;
-      align-items:center;justify-content:center;
-      padding:4% 6%;
-      position:relative;
+    /* saved indicator */
+    #savedBadge{
+      position:fixed;top:10px;right:12px;
+      background:rgba(102,187,106,0.9);color:#fff;
+      font-size:11px;font-weight:600;letter-spacing:0.05em;
+      padding:4px 12px;border-radius:99px;
+      opacity:0;transition:opacity 0.4s;
+      z-index:60;pointer-events:none;
     }
+    #savedBadge.show{opacity:1;}
 
-    .exam-name{
-      font-size:clamp(10px,3.5vw,28px);
-      font-weight:700;letter-spacing:0.2em;
-      text-transform:uppercase;
-      color:var(--sub);
-      margin-bottom:2%;
-      text-align:center;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      max-width:100%;
-    }
+    .wrap{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4% 6%;position:relative;}
 
-    .digits{
-      font-size:clamp(40px,18vw,200px);
-      font-weight:200;
-      font-variant-numeric:tabular-nums;
-      letter-spacing:-0.02em;
-      line-height:1;
-      color:var(--text);
-      transition:color 0.4s;
-      text-align:center;
-    }
+    .exam-name{font-size:clamp(10px,3.5vw,28px);font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--sub);margin-bottom:2%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+
+    .digits{font-size:clamp(40px,18vw,200px);font-weight:200;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;line-height:1;color:var(--text);transition:color 0.4s;text-align:center;}
     .digits.warn  {color:var(--warn);}
     .digits.danger{color:var(--danger);}
     .digits.done  {color:var(--done);font-size:clamp(18px,6vw,60px);letter-spacing:0.04em;}
 
-    .status-row{
-      font-size:clamp(9px,2vw,18px);
-      letter-spacing:0.1em;text-transform:uppercase;
-      color:var(--sub);margin-top:2%;text-align:center;
-      min-height:1.4em;transition:color 0.3s;
-    }
+    .status-row{font-size:clamp(9px,2vw,18px);letter-spacing:0.1em;text-transform:uppercase;color:var(--sub);margin-top:2%;text-align:center;min-height:1.4em;transition:color 0.3s;}
     .status-row.warn  {color:var(--warn);}
     .status-row.danger{color:var(--danger);}
     .status-row.done  {color:var(--done);}
 
-    .bar-wrap{
-      width:80%;height:clamp(3px,0.8vh,8px);
-      background:var(--bar-bg);border-radius:4px;
-      margin-top:3%;overflow:hidden;
-    }
-    .bar-fill{
-      height:100%;border-radius:4px;
-      background:var(--accent);
-      transition:width 0.9s linear, background 0.4s;
-    }
+    .bar-wrap{width:80%;height:clamp(3px,0.8vh,8px);background:var(--bar-bg);border-radius:4px;margin-top:3%;overflow:hidden;}
+    .bar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width 0.9s linear,background 0.4s;}
     .bar-fill.warn  {background:var(--warn);}
     .bar-fill.danger{background:var(--danger);}
 
-    /* ── Controls (fade in on hover) ── */
-    .controls{
-      position:absolute;bottom:0;left:0;right:0;
-      background:rgba(0,0,0,0.82);
-      backdrop-filter:blur(6px);
-      padding:8px 12px;
-      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-      opacity:0;transition:opacity 0.3s;
-      z-index:20;
-    }
-    .wrap:hover .controls,
-    .controls.pinned{opacity:1;}
+    /* controls */
+    .controls{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;opacity:0;transition:opacity 0.3s;z-index:20;}
+    .wrap:hover .controls,.controls.pinned{opacity:1;}
 
     .ctrl-sep{width:1px;height:22px;background:rgba(255,255,255,0.15);flex-shrink:0;}
     .ctrl-lbl{font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap;}
 
-    .cin{
-      width:38px;text-align:center;
-      padding:4px 2px;font-size:13px;font-weight:600;
-      background:rgba(255,255,255,0.12);
-      border:1px solid rgba(255,255,255,0.2);
-      border-radius:5px;color:#fff;outline:none;
-    }
+    .cin{width:38px;text-align:center;padding:4px 2px;font-size:13px;font-weight:600;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:#fff;outline:none;}
     .csep{font-size:15px;color:rgba(255,255,255,0.35);}
-
-    .ctxt{
-      padding:4px 8px;font-size:11px;
-      background:rgba(255,255,255,0.1);
-      border:1px solid rgba(255,255,255,0.2);
-      border-radius:5px;color:#fff;outline:none;width:110px;
-    }
-
-    .csel{
-      padding:4px 6px;font-size:11px;
-      background:rgba(255,255,255,0.1);
-      border:1px solid rgba(255,255,255,0.2);
-      border-radius:5px;color:#fff;outline:none;
-    }
+    .ctxt{padding:4px 8px;font-size:11px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:#fff;outline:none;width:110px;}
+    .csel{padding:4px 6px;font-size:11px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:#fff;outline:none;}
     .csel option{background:#1a1a2e;}
 
-    .cbtn{
-      padding:5px 12px;border-radius:5px;
-      border:1px solid rgba(255,255,255,0.22);
-      background:rgba(255,255,255,0.1);
-      color:#fff;font-size:11px;font-weight:600;
-      cursor:pointer;white-space:nowrap;
-      transition:background 0.15s,transform 0.1s;
-    }
+    .cbtn{padding:5px 12px;border-radius:5px;border:1px solid rgba(255,255,255,0.22);background:rgba(255,255,255,0.1);color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background 0.15s,transform 0.1s;}
     .cbtn:hover{background:rgba(255,255,255,0.22);}
     .cbtn:active{transform:scale(0.95);}
     .cbtn.go{background:var(--accent);border-color:var(--accent);color:#000;}
     .cbtn.go:hover{opacity:0.85;}
     .cbtn:disabled{opacity:0.35;cursor:not-allowed;}
+
+    /* save button — glows green */
+    .cbtn.save{background:rgba(102,187,106,0.25);border-color:rgba(102,187,106,0.6);color:#a5d6a7;}
+    .cbtn.save:hover{background:rgba(102,187,106,0.4);}
 
     .pin-label{display:flex;align-items:center;gap:4px;font-size:10px;color:rgba(255,255,255,0.45);cursor:pointer;white-space:nowrap;}
     .pin-label input{cursor:pointer;}
@@ -154,9 +85,9 @@
 <body>
 
 <div id="flash"></div>
+<div id="savedBadge">✓ Settings saved to slide deck</div>
 
 <div class="wrap" id="wrap">
-
   <div class="exam-name" id="examDisplay">FINAL EXAM</div>
   <div class="digits"    id="digits">00:00</div>
   <div class="status-row" id="status">Hover to see controls</div>
@@ -164,10 +95,8 @@
     <div class="bar-fill" id="barFill" style="width:100%"></div>
   </div>
 
-  <!-- Controls bar -->
   <div class="controls" id="controls">
 
-    <!-- Duration -->
     <span class="ctrl-lbl">Duration</span>
     <input class="cin" type="number" id="inH" min="0" max="9"  value="1"/>
     <span class="csep">:</span>
@@ -177,21 +106,18 @@
 
     <div class="ctrl-sep"></div>
 
-    <!-- Exam name -->
     <input class="ctxt" type="text" id="nameIn" value="Final Exam" placeholder="Exam name"
       oninput="document.getElementById('examDisplay').textContent=this.value.toUpperCase()||'EXAM'"/>
 
     <div class="ctrl-sep"></div>
 
-    <!-- Warn / Alert -->
     <span class="ctrl-lbl">Warn</span>
-    <input class="cin" type="number" id="warnAt" value="10" min="0" max="999" style="width:34px"/>
+    <input class="cin" type="number" id="warnAt"  value="10" min="0" max="999" style="width:34px"/>
     <span class="ctrl-lbl">Alert</span>
     <input class="cin" type="number" id="alertAt" value="5"  min="0" max="999" style="width:34px"/>
 
     <div class="ctrl-sep"></div>
 
-    <!-- Theme -->
     <select class="csel" id="themeEl" onchange="applyTheme(this.value)">
       <option value="">Dark</option>
       <option value="light">Light</option>
@@ -203,14 +129,17 @@
 
     <div class="ctrl-sep"></div>
 
-    <!-- Buttons -->
-    <button class="cbtn go" id="btnS" onclick="startTimer()">▶ Start</button>
-    <button class="cbtn"    id="btnP" onclick="togglePause()" disabled>⏸ Pause</button>
-    <button class="cbtn"    onclick="resetTimer()">↺ Reset</button>
+    <button class="cbtn go"   id="btnS" onclick="startTimer()">▶ Start</button>
+    <button class="cbtn"      id="btnP" onclick="togglePause()" disabled>⏸ Pause</button>
+    <button class="cbtn"      onclick="resetTimer()">↺ Reset</button>
 
     <div class="ctrl-sep"></div>
 
-    <!-- Pin controls -->
+    <!-- THE KEY BUTTON -->
+    <button class="cbtn save" onclick="saveSettings()">💾 Save to deck</button>
+
+    <div class="ctrl-sep"></div>
+
     <label class="pin-label">
       <input type="checkbox" id="pinChk" onchange="togglePin(this.checked)"/> Pin controls
     </label>
@@ -219,124 +148,261 @@
 </div>
 
 <script>
-  let total=0,rem=0,iv=null,running=false;
+/* ── State ── */
+let total=0, rem=0, iv=null, running=false;
+const SETTINGS_KEY = 'examTimerSettings';
 
-  const $=id=>document.getElementById(id);
+const $ = id => document.getElementById(id);
 
-  function fmt(s){
-    const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
-    return h>0?`${h}:${pad(m)}:${pad(sec)}`:`${pad(m)}:${pad(sec)}`;
+/* ── Office.js ready ── */
+Office.onReady(function(info){
+  if(info.host === Office.HostType.PowerPoint){
+    loadSettings(); // load saved settings from the deck on open
   }
-  function pad(n){return String(n).padStart(2,'0');}
+});
 
-  function beep(f,d){
-    try{
-      const c=new(window.AudioContext||window.webkitAudioContext)();
-      const o=c.createOscillator(),g=c.createGain();
-      o.connect(g);g.connect(c.destination);
-      o.frequency.value=f;o.type='sine';
-      g.gain.setValueAtTime(0.4,c.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+d);
-      o.start();o.stop(c.currentTime+d);
-    }catch(e){}
+/* ─────────────────────────────────────────
+   SAVE settings into the document itself
+   using Office CustomXmlParts — persists
+   inside the .pptx file forever
+───────────────────────────────────────── */
+function saveSettings(){
+  const settings = {
+    h:     $('inH').value,
+    m:     $('inM').value,
+    s:     $('inS').value,
+    name:  $('nameIn').value,
+    warn:  $('warnAt').value,
+    alert: $('alertAt').value,
+    theme: $('themeEl').value,
+    pin:   $('pinChk').checked
+  };
+
+  try {
+    // Primary method: Office CustomXmlParts (most reliable, stored in the .pptx)
+    Office.context.document.customXmlParts.getByNamespaceAsync(
+      'http://examtimer/settings',
+      function(result){
+        // Delete any existing settings first
+        if(result.status === Office.AsyncResultStatus.Succeeded && result.value.length > 0){
+          result.value.forEach(part => part.deleteAsync(()=>{}));
+        }
+        // Write new settings
+        const xml = `<settings xmlns="http://examtimer/settings">${JSON.stringify(settings)}</settings>`;
+        Office.context.document.customXmlParts.addAsync(xml, function(addResult){
+          if(addResult.status === Office.AsyncResultStatus.Succeeded){
+            showSaved();
+          } else {
+            saveViaProperties(settings); // fallback
+          }
+        });
+      }
+    );
+  } catch(e){
+    saveViaProperties(settings);
   }
+}
 
-  function flash(n){
-    let i=0,fi=setInterval(()=>{
-      $('flash').classList.toggle('on');
-      if(++i>=n*2)clearInterval(fi);
-    },280);
-  }
-
-  function repaint(){
-    const wS=parseInt($('warnAt').value)*60;
-    const aS=parseInt($('alertAt').value)*60;
-    const pct=total>0?(rem/total)*100:0;
-    $('digits').textContent=fmt(rem);
-    $('barFill').style.width=pct+'%';
-    const cls=rem<=aS?'danger':rem<=wS?'warn':'';
-    $('digits').className='digits'+(cls?' '+cls:'');
-    $('barFill').className='bar-fill'+(cls?' '+cls:'');
-  }
-
-  function setStatus(msg,cls){
-    $('status').textContent=msg;
-    $('status').className='status-row'+(cls?' '+cls:'');
-  }
-
-  function startTimer(){
-    if(running)return;
-    if(!iv){
-      const h=parseInt($('inH').value)||0;
-      const m=parseInt($('inM').value)||0;
-      const s=parseInt($('inS').value)||0;
-      total=h*3600+m*60+s;
-      if(total<=0){setStatus('Set a duration first','warn');return;}
-      rem=total;
+function saveViaProperties(settings){
+  // Fallback: use document settings API
+  Office.context.document.settings.set(SETTINGS_KEY, JSON.stringify(settings));
+  Office.context.document.settings.saveAsync(function(result){
+    if(result.status === Office.AsyncResultStatus.Succeeded){
+      showSaved();
     }
-    running=true;
-    $('btnS').disabled=true;$('btnP').disabled=false;
-    setStatus('Time remaining','');
-    beep(880,0.12);repaint();
-    iv=setInterval(tick,1000);
-  }
-
-  function tick(){
-    rem--;
-    const wS=parseInt($('warnAt').value)*60;
-    const aS=parseInt($('alertAt').value)*60;
-    if(rem===wS){beep(660,0.35);flash(2);setStatus(`⚠ ${$('warnAt').value} min remaining`,'warn');}
-    if(rem===aS){beep(440,0.4);setTimeout(()=>beep(440,0.4),350);flash(4);setStatus(`Only ${$('alertAt').value} min left!`,'danger');}
-    if(rem<=0){rem=0;finish();return;}
-    repaint();
-  }
-
-  function finish(){
-    clearInterval(iv);iv=null;running=false;
-    $('digits').textContent="TIME'S UP";
-    $('digits').className='digits done';
-    $('barFill').style.width='0%';
-    $('btnS').disabled=false;$('btnP').disabled=true;
-    setStatus("Pens down!",'done');
-    beep(523,0.2);setTimeout(()=>beep(659,0.2),260);setTimeout(()=>beep(784,0.5),520);
-    flash(8);
-  }
-
-  function togglePause(){
-    if(running){
-      clearInterval(iv);iv=null;running=false;
-      $('btnP').textContent='▶ Resume';
-      $('btnS').disabled=false;
-      setStatus('Paused','warn');
-    } else {
-      startTimer();
-      $('btnP').textContent='⏸ Pause';
-    }
-  }
-
-  function resetTimer(){
-    clearInterval(iv);iv=null;running=false;rem=0;total=0;
-    $('digits').textContent='00:00';$('digits').className='digits';
-    $('barFill').style.width='100%';$('barFill').className='bar-fill';
-    $('btnS').disabled=false;$('btnP').disabled=true;
-    $('btnP').textContent='⏸ Pause';
-    setStatus('Hover to see controls','');
-  }
-
-  function applyTheme(v){
-    document.body.className=v;
-  }
-
-  function togglePin(on){
-    $('controls').classList.toggle('pinned',on);
-  }
-
-  /* Keyboard: S = start/stop, R = reset */
-  document.addEventListener('keydown',e=>{
-    if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
-    if(e.key==='s'||e.key==='S'){running?togglePause():startTimer();}
-    if(e.key==='r'||e.key==='R')resetTimer();
   });
+}
+
+/* ─────────────────────────────────────────
+   LOAD settings when the deck opens
+───────────────────────────────────────── */
+function loadSettings(){
+  // Try CustomXmlParts first
+  try {
+    Office.context.document.customXmlParts.getByNamespaceAsync(
+      'http://examtimer/settings',
+      function(result){
+        if(result.status === Office.AsyncResultStatus.Succeeded && result.value.length > 0){
+          result.value[0].getXmlAsync(function(xmlResult){
+            if(xmlResult.status === Office.AsyncResultStatus.Succeeded){
+              try {
+                const xml   = xmlResult.value;
+                const match = xml.match(/<settings[^>]*>([\s\S]*?)<\/settings>/);
+                if(match){
+                  applySettings(JSON.parse(match[1]));
+                  return;
+                }
+              } catch(e){}
+            }
+            loadViaProperties(); // fallback
+          });
+        } else {
+          loadViaProperties();
+        }
+      }
+    );
+  } catch(e){
+    loadViaProperties();
+  }
+}
+
+function loadViaProperties(){
+  try {
+    const raw = Office.context.document.settings.get(SETTINGS_KEY);
+    if(raw){ applySettings(JSON.parse(raw)); }
+  } catch(e){}
+}
+
+function applySettings(s){
+  if(!s) return;
+  if(s.h     !== undefined) $('inH').value    = s.h;
+  if(s.m     !== undefined) $('inM').value    = s.m;
+  if(s.s     !== undefined) $('inS').value    = s.s;
+  if(s.name  !== undefined){ $('nameIn').value = s.name; $('examDisplay').textContent = s.name.toUpperCase() || 'EXAM'; }
+  if(s.warn  !== undefined) $('warnAt').value  = s.warn;
+  if(s.alert !== undefined) $('alertAt').value = s.alert;
+  if(s.theme !== undefined){ $('themeEl').value = s.theme; applyTheme(s.theme); }
+  if(s.pin   !== undefined){ $('pinChk').checked = s.pin; togglePin(s.pin); }
+
+  // Update display with loaded duration
+  const h=parseInt(s.h)||0, m=parseInt(s.m)||0, sec=parseInt(s.s)||0;
+  total = h*3600 + m*60 + sec;
+  rem   = total;
+  $('digits').textContent = fmt(rem);
+  $('barFill').style.width = '100%';
+  setStatus('Ready — press Start','');
+}
+
+/* ─────────────────────────────────────────
+   Timer logic
+───────────────────────────────────────── */
+function fmt(s){
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  return h>0?`${h}:${pad(m)}:${pad(sec)}`:`${pad(m)}:${pad(sec)}`;
+}
+function pad(n){return String(n).padStart(2,'0');}
+
+function beep(f,d){
+  try{
+    const c=new(window.AudioContext||window.webkitAudioContext)();
+    const o=c.createOscillator(),g=c.createGain();
+    o.connect(g);g.connect(c.destination);
+    o.frequency.value=f;o.type='sine';
+    g.gain.setValueAtTime(0.4,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+d);
+    o.start();o.stop(c.currentTime+d);
+  }catch(e){}
+}
+
+function flash(n){
+  let i=0,fi=setInterval(()=>{
+    $('flash').classList.toggle('on');
+    if(++i>=n*2)clearInterval(fi);
+  },280);
+}
+
+function repaint(){
+  const wS=parseInt($('warnAt').value)*60;
+  const aS=parseInt($('alertAt').value)*60;
+  const pct=total>0?(rem/total)*100:0;
+  $('digits').textContent=fmt(rem);
+  $('barFill').style.width=pct+'%';
+  const cls=rem<=aS?'danger':rem<=wS?'warn':'';
+  $('digits').className='digits'+(cls?' '+cls:'');
+  $('barFill').className='bar-fill'+(cls?' '+cls:'');
+}
+
+function setStatus(msg,cls){
+  $('status').textContent=msg;
+  $('status').className='status-row'+(cls?' '+cls:'');
+}
+
+function startTimer(){
+  if(running)return;
+  if(!iv){
+    const h=parseInt($('inH').value)||0;
+    const m=parseInt($('inM').value)||0;
+    const s=parseInt($('inS').value)||0;
+    total=h*3600+m*60+s;
+    if(total<=0){setStatus('Set a duration first','warn');return;}
+    rem=total;
+  }
+  running=true;
+  $('btnS').disabled=true;$('btnP').disabled=false;
+  setStatus('Time remaining','');
+  beep(880,0.12);repaint();
+  iv=setInterval(tick,1000);
+}
+
+function tick(){
+  rem--;
+  const wS=parseInt($('warnAt').value)*60;
+  const aS=parseInt($('alertAt').value)*60;
+  if(rem===wS){beep(660,0.35);flash(2);setStatus(`⚠ ${$('warnAt').value} min remaining`,'warn');}
+  if(rem===aS){beep(440,0.4);setTimeout(()=>beep(440,0.4),350);flash(4);setStatus(`Only ${$('alertAt').value} min left!`,'danger');}
+  if(rem<=0){rem=0;finish();return;}
+  repaint();
+}
+
+function finish(){
+  clearInterval(iv);iv=null;running=false;
+  $('digits').textContent="TIME'S UP";
+  $('digits').className='digits done';
+  $('barFill').style.width='0%';
+  $('btnS').disabled=false;$('btnP').disabled=true;
+  setStatus("Pens down!",'done');
+  beep(523,0.2);setTimeout(()=>beep(659,0.2),260);setTimeout(()=>beep(784,0.5),520);
+  flash(8);
+}
+
+function togglePause(){
+  if(running){
+    clearInterval(iv);iv=null;running=false;
+    $('btnP').textContent='▶ Resume';
+    $('btnS').disabled=false;
+    setStatus('Paused','warn');
+  } else {
+    startTimer();
+    $('btnP').textContent='⏸ Pause';
+  }
+}
+
+function resetTimer(){
+  clearInterval(iv);iv=null;running=false;
+  const h=parseInt($('inH').value)||0;
+  const m=parseInt($('inM').value)||0;
+  const s=parseInt($('inS').value)||0;
+  total=h*3600+m*60+s;
+  rem=total;
+  $('digits').textContent=fmt(rem);
+  $('digits').className='digits';
+  $('barFill').style.width='100%';
+  $('barFill').className='bar-fill';
+  $('btnS').disabled=false;$('btnP').disabled=true;
+  $('btnP').textContent='⏸ Pause';
+  setStatus('Ready — press Start','');
+}
+
+function applyTheme(v){
+  document.body.className=v||'';
+}
+
+function togglePin(on){
+  $('controls').classList.toggle('pinned',on);
+}
+
+function showSaved(){
+  const b=$('savedBadge');
+  b.classList.add('show');
+  setTimeout(()=>b.classList.remove('show'),2500);
+}
+
+/* Keyboard shortcuts */
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+  if(e.key==='s'||e.key==='S'){running?togglePause():startTimer();}
+  if(e.key==='r'||e.key==='R')resetTimer();
+});
 </script>
 </body>
 </html>
