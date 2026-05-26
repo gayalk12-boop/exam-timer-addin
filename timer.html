@@ -4,47 +4,60 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Exam Timer</title>
-  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
     :root{
-      --bg:#0f1117;--text:#ffffff;--sub:rgba(255,255,255,0.4);
+      --bg:#0f1117;--text:#fff;--sub:rgba(255,255,255,0.4);
       --accent:#4fc3f7;--warn:#ffb74d;--danger:#ef5350;--done:#66bb6a;
-      --bar-bg:rgba(255,255,255,0.1);
+      --bar-bg:rgba(255,255,255,0.1);--ctrl-bg:rgba(0,0,0,0.88);
     }
-    body.light{--bg:#f0f4ff;--text:#1a1a2e;--sub:rgba(0,0,0,0.38);--accent:#1565c0;--warn:#e65100;--danger:#b71c1c;--done:#1b5e20;--bar-bg:rgba(0,0,0,0.1);}
-    body.red  {--bg:#3b0000;--text:#fff;--sub:rgba(255,190,190,0.5);--accent:#ff8a80;--warn:#ffe082;--danger:#ff1744;--done:#69f0ae;--bar-bg:rgba(255,255,255,0.1);}
-    body.green{--bg:#00251a;--text:#fff;--sub:rgba(160,255,200,0.5);--accent:#69f0ae;--warn:#ffd740;--danger:#ff5252;--done:#69f0ae;--bar-bg:rgba(255,255,255,0.1);}
-    body.blue {--bg:#0d1b2a;--text:#fff;--sub:rgba(150,200,255,0.5);--accent:#60a5fa;--warn:#fcd34d;--danger:#f87171;--done:#34d399;--bar-bg:rgba(255,255,255,0.1);}
-    body.gold {--bg:#1c0d00;--text:#fff;--sub:rgba(255,215,80,0.5);--accent:#fcd34d;--warn:#fde68a;--danger:#fca5a5;--done:#6ee7b7;--bar-bg:rgba(255,255,255,0.1);}
+    body.light{--bg:#f0f4ff;--text:#1a1a2e;--sub:rgba(0,0,0,0.38);--accent:#1565c0;--warn:#e65100;--danger:#b71c1c;--done:#1b5e20;--bar-bg:rgba(0,0,0,0.1);--ctrl-bg:rgba(20,20,60,0.92);}
+    body.red  {--bg:#3b0000;--text:#fff;--sub:rgba(255,190,190,0.5);--accent:#ff8a80;--warn:#ffe082;--danger:#ff1744;--done:#69f0ae;--bar-bg:rgba(255,255,255,0.1);--ctrl-bg:rgba(0,0,0,0.88);}
+    body.green{--bg:#00251a;--text:#fff;--sub:rgba(160,255,200,0.5);--accent:#69f0ae;--warn:#ffd740;--danger:#ff5252;--done:#69f0ae;--bar-bg:rgba(255,255,255,0.1);--ctrl-bg:rgba(0,0,0,0.88);}
+    body.blue {--bg:#0d1b2a;--text:#fff;--sub:rgba(150,200,255,0.5);--accent:#60a5fa;--warn:#fcd34d;--danger:#f87171;--done:#34d399;--bar-bg:rgba(255,255,255,0.1);--ctrl-bg:rgba(0,0,0,0.88);}
+    body.gold {--bg:#1c0d00;--text:#fff;--sub:rgba(255,215,80,0.5);--accent:#fcd34d;--warn:#fde68a;--danger:#fca5a5;--done:#6ee7b7;--bar-bg:rgba(255,255,255,0.1);--ctrl-bg:rgba(0,0,0,0.88);}
 
     html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;overflow:hidden;transition:background 0.5s,color 0.3s;}
 
+    /* ── Loading screen ── */
+    #loadScreen{
+      position:fixed;inset:0;background:var(--bg);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:12px;z-index:100;transition:opacity 0.4s;
+    }
+    #loadScreen.hidden{opacity:0;pointer-events:none;}
+    .spinner{width:32px;height:32px;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    #loadMsg{font-size:13px;color:var(--sub);letter-spacing:0.05em;}
+
+    /* ── Flash overlay ── */
     #flash{position:fixed;inset:0;background:var(--danger);opacity:0;pointer-events:none;z-index:50;transition:opacity 0.15s;}
     #flash.on{opacity:0.2;}
 
-    /* saved indicator */
-    #savedBadge{
-      position:fixed;top:10px;right:12px;
-      background:rgba(102,187,106,0.9);color:#fff;
-      font-size:11px;font-weight:600;letter-spacing:0.05em;
-      padding:4px 12px;border-radius:99px;
-      opacity:0;transition:opacity 0.4s;
-      z-index:60;pointer-events:none;
-    }
+    /* ── Saved badge ── */
+    #savedBadge{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(102,187,106,0.95);color:#fff;font-size:11px;font-weight:600;letter-spacing:0.05em;padding:5px 16px;border-radius:99px;opacity:0;transition:opacity 0.4s;z-index:60;pointer-events:none;white-space:nowrap;}
     #savedBadge.show{opacity:1;}
 
-    .wrap{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4% 6%;position:relative;}
+    /* ── Main timer area ── */
+    .wrap{
+      width:100%;
+      /* leave room for always-visible controls bar at bottom */
+      height:calc(100% - 52px);
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      padding:4% 6%;
+    }
 
     .exam-name{font-size:clamp(10px,3.5vw,28px);font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--sub);margin-bottom:2%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 
-    .digits{font-size:clamp(40px,18vw,200px);font-weight:200;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;line-height:1;color:var(--text);transition:color 0.4s;text-align:center;}
+    .digits{font-size:clamp(40px,17vw,190px);font-weight:200;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;line-height:1;color:var(--text);transition:color 0.4s;text-align:center;}
     .digits.warn  {color:var(--warn);}
     .digits.danger{color:var(--danger);}
-    .digits.done  {color:var(--done);font-size:clamp(18px,6vw,60px);letter-spacing:0.04em;}
+    .digits.done  {color:var(--done);font-size:clamp(18px,6vw,58px);letter-spacing:0.04em;}
 
-    .status-row{font-size:clamp(9px,2vw,18px);letter-spacing:0.1em;text-transform:uppercase;color:var(--sub);margin-top:2%;text-align:center;min-height:1.4em;transition:color 0.3s;}
+    .status-row{font-size:clamp(9px,1.8vw,17px);letter-spacing:0.1em;text-transform:uppercase;color:var(--sub);margin-top:2%;text-align:center;min-height:1.4em;transition:color 0.3s;}
     .status-row.warn  {color:var(--warn);}
     .status-row.danger{color:var(--danger);}
     .status-row.done  {color:var(--done);}
@@ -54,228 +67,253 @@
     .bar-fill.warn  {background:var(--warn);}
     .bar-fill.danger{background:var(--danger);}
 
-    /* controls */
-    .controls{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;opacity:0;transition:opacity 0.3s;z-index:20;}
-    .wrap:hover .controls,.controls.pinned{opacity:1;}
+    /* ────────────────────────────────────────
+       CONTROLS BAR — always visible at bottom
+       Height: 52px fixed
+    ──────────────────────────────────────── */
+    .controls{
+      position:fixed;bottom:0;left:0;right:0;
+      height:52px;
+      background:var(--ctrl-bg);
+      display:flex;align-items:center;
+      gap:6px;padding:0 10px;
+      flex-wrap:nowrap;overflow-x:auto;
+      z-index:20;
+      /* hide scrollbar but keep scrollable */
+      scrollbar-width:none;
+    }
+    .controls::-webkit-scrollbar{display:none;}
+
+    /* When "hide controls" is checked, fade out until hovered */
+    .controls.auto-hide{
+      opacity:0;
+      transition:opacity 0.3s;
+    }
+    .controls.auto-hide:hover{opacity:1;}
 
     .ctrl-sep{width:1px;height:22px;background:rgba(255,255,255,0.15);flex-shrink:0;}
-    .ctrl-lbl{font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap;}
+    .ctrl-lbl{font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap;flex-shrink:0;}
 
-    .cin{width:38px;text-align:center;padding:4px 2px;font-size:13px;font-weight:600;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:#fff;outline:none;}
-    .csep{font-size:15px;color:rgba(255,255,255,0.35);}
-    .ctxt{padding:4px 8px;font-size:11px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:#fff;outline:none;width:110px;}
-    .csel{padding:4px 6px;font-size:11px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:#fff;outline:none;}
+    .cin{width:36px;text-align:center;padding:4px 2px;font-size:13px;font-weight:600;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:#fff;outline:none;flex-shrink:0;}
+    .csep{font-size:15px;color:rgba(255,255,255,0.35);flex-shrink:0;}
+    .ctxt{padding:4px 8px;font-size:11px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:#fff;outline:none;width:100px;flex-shrink:0;}
+    .csel{padding:4px 5px;font-size:11px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:#fff;outline:none;flex-shrink:0;}
     .csel option{background:#1a1a2e;}
 
-    .cbtn{padding:5px 12px;border-radius:5px;border:1px solid rgba(255,255,255,0.22);background:rgba(255,255,255,0.1);color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background 0.15s,transform 0.1s;}
+    .cbtn{padding:5px 10px;border-radius:5px;border:1px solid rgba(255,255,255,0.22);background:rgba(255,255,255,0.1);color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background 0.15s,transform 0.1s;}
     .cbtn:hover{background:rgba(255,255,255,0.22);}
     .cbtn:active{transform:scale(0.95);}
     .cbtn.go{background:var(--accent);border-color:var(--accent);color:#000;}
     .cbtn.go:hover{opacity:0.85;}
     .cbtn:disabled{opacity:0.35;cursor:not-allowed;}
-
-    /* save button — glows green */
     .cbtn.save{background:rgba(102,187,106,0.25);border-color:rgba(102,187,106,0.6);color:#a5d6a7;}
     .cbtn.save:hover{background:rgba(102,187,106,0.4);}
 
-    .pin-label{display:flex;align-items:center;gap:4px;font-size:10px;color:rgba(255,255,255,0.45);cursor:pointer;white-space:nowrap;}
-    .pin-label input{cursor:pointer;}
+    .hide-label{display:flex;align-items:center;gap:4px;font-size:10px;color:rgba(255,255,255,0.45);cursor:pointer;white-space:nowrap;flex-shrink:0;}
+    .hide-label input{cursor:pointer;}
   </style>
 </head>
 <body>
 
+<!-- Loading screen shown until Office.js is ready -->
+<div id="loadScreen">
+  <div class="spinner"></div>
+  <div id="loadMsg">Loading Exam Timer…</div>
+</div>
+
 <div id="flash"></div>
 <div id="savedBadge">✓ Settings saved to slide deck</div>
 
-<div class="wrap" id="wrap">
+<div class="wrap">
   <div class="exam-name" id="examDisplay">FINAL EXAM</div>
   <div class="digits"    id="digits">00:00</div>
-  <div class="status-row" id="status">Hover to see controls</div>
+  <div class="status-row" id="status">Press Start to begin</div>
   <div class="bar-wrap">
     <div class="bar-fill" id="barFill" style="width:100%"></div>
   </div>
+</div>
 
-  <div class="controls" id="controls">
+<!-- Controls bar — fixed at the bottom, always reachable -->
+<div class="controls" id="controls">
 
-    <span class="ctrl-lbl">Duration</span>
-    <input class="cin" type="number" id="inH" min="0" max="9"  value="1"/>
-    <span class="csep">:</span>
-    <input class="cin" type="number" id="inM" min="0" max="59" value="0"/>
-    <span class="csep">:</span>
-    <input class="cin" type="number" id="inS" min="0" max="59" value="0"/>
+  <span class="ctrl-lbl">Duration</span>
+  <input class="cin" type="number" id="inH" min="0" max="9"  value="1"/>
+  <span class="csep">:</span>
+  <input class="cin" type="number" id="inM" min="0" max="59" value="0"/>
+  <span class="csep">:</span>
+  <input class="cin" type="number" id="inS" min="0" max="59" value="0"/>
 
-    <div class="ctrl-sep"></div>
+  <div class="ctrl-sep"></div>
 
-    <input class="ctxt" type="text" id="nameIn" value="Final Exam" placeholder="Exam name"
-      oninput="document.getElementById('examDisplay').textContent=this.value.toUpperCase()||'EXAM'"/>
+  <input class="ctxt" type="text" id="nameIn" value="Final Exam" placeholder="Exam name"
+    oninput="$('examDisplay').textContent=this.value.toUpperCase()||'EXAM'"/>
 
-    <div class="ctrl-sep"></div>
+  <div class="ctrl-sep"></div>
 
-    <span class="ctrl-lbl">Warn</span>
-    <input class="cin" type="number" id="warnAt"  value="10" min="0" max="999" style="width:34px"/>
-    <span class="ctrl-lbl">Alert</span>
-    <input class="cin" type="number" id="alertAt" value="5"  min="0" max="999" style="width:34px"/>
+  <span class="ctrl-lbl">Warn</span>
+  <input class="cin" type="number" id="warnAt"  value="10" min="0" max="999" style="width:32px"/>
+  <span class="ctrl-lbl">Alert</span>
+  <input class="cin" type="number" id="alertAt" value="5"  min="0" max="999" style="width:32px"/>
 
-    <div class="ctrl-sep"></div>
+  <div class="ctrl-sep"></div>
 
-    <select class="csel" id="themeEl" onchange="applyTheme(this.value)">
-      <option value="">Dark</option>
-      <option value="light">Light</option>
-      <option value="red">Red</option>
-      <option value="green">Green</option>
-      <option value="blue">Blue</option>
-      <option value="gold">Gold</option>
-    </select>
+  <select class="csel" id="themeEl" onchange="applyTheme(this.value)">
+    <option value="">Dark</option>
+    <option value="light">Light</option>
+    <option value="red">Red</option>
+    <option value="green">Green</option>
+    <option value="blue">Blue</option>
+    <option value="gold">Gold</option>
+  </select>
 
-    <div class="ctrl-sep"></div>
+  <div class="ctrl-sep"></div>
 
-    <button class="cbtn go"   id="btnS" onclick="startTimer()">▶ Start</button>
-    <button class="cbtn"      id="btnP" onclick="togglePause()" disabled>⏸ Pause</button>
-    <button class="cbtn"      onclick="resetTimer()">↺ Reset</button>
+  <button class="cbtn go" id="btnS" onclick="startTimer()">▶ Start</button>
+  <button class="cbtn"    id="btnP" onclick="togglePause()" disabled>⏸ Pause</button>
+  <button class="cbtn"    onclick="resetTimer()">↺ Reset</button>
 
-    <div class="ctrl-sep"></div>
+  <div class="ctrl-sep"></div>
 
-    <!-- THE KEY BUTTON -->
-    <button class="cbtn save" onclick="saveSettings()">💾 Save to deck</button>
+  <button class="cbtn save" onclick="saveSettings()">💾 Save</button>
 
-    <div class="ctrl-sep"></div>
+  <div class="ctrl-sep"></div>
 
-    <label class="pin-label">
-      <input type="checkbox" id="pinChk" onchange="togglePin(this.checked)"/> Pin controls
-    </label>
+  <label class="hide-label" title="Hide controls while presenting — hover bottom edge to bring them back">
+    <input type="checkbox" id="hideChk" onchange="toggleHide(this.checked)"/> Hide while presenting
+  </label>
 
-  </div>
 </div>
 
 <script>
-/* ── State ── */
-let total=0, rem=0, iv=null, running=false;
-const SETTINGS_KEY = 'examTimerSettings';
+let total=0,rem=0,iv=null,running=false;
+const SETTINGS_KEY='examTimerSettings';
 
-const $ = id => document.getElementById(id);
+const $=id=>document.getElementById(id);
 
-/* ── Office.js ready ── */
-Office.onReady(function(info){
-  if(info.host === Office.HostType.PowerPoint){
-    loadSettings(); // load saved settings from the deck on open
+/* ─── Office.js init with timeout fallback ─── */
+let officeReady = false;
+
+function hideLoader(msg){
+  $('loadMsg').textContent = msg||'';
+  $('loadScreen').classList.add('hidden');
+  setTimeout(()=>{ $('loadScreen').style.display='none'; }, 500);
+}
+
+// Timeout: if Office.js doesn't respond in 4s, proceed anyway
+const officeTimeout = setTimeout(()=>{
+  if(!officeReady){
+    hideLoader('Running in standalone mode');
+    restoreFromLocalStorage();
   }
+}, 4000);
+
+Office.onReady(function(info){
+  officeReady = true;
+  clearTimeout(officeTimeout);
+  hideLoader();
+  loadSettings();
 });
 
-/* ─────────────────────────────────────────
-   SAVE settings into the document itself
-   using Office CustomXmlParts — persists
-   inside the .pptx file forever
-───────────────────────────────────────── */
+/* ─── Save settings ─── */
 function saveSettings(){
-  const settings = {
-    h:     $('inH').value,
-    m:     $('inM').value,
-    s:     $('inS').value,
-    name:  $('nameIn').value,
-    warn:  $('warnAt').value,
-    alert: $('alertAt').value,
-    theme: $('themeEl').value,
-    pin:   $('pinChk').checked
-  };
+  const s = gatherSettings();
+  // Always save to localStorage as instant backup
+  try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }catch(e){}
 
-  try {
-    // Primary method: Office CustomXmlParts (most reliable, stored in the .pptx)
+  if(!officeReady){ showSaved(); return; }
+
+  // Save into the .pptx via CustomXmlParts
+  try{
     Office.context.document.customXmlParts.getByNamespaceAsync(
       'http://examtimer/settings',
-      function(result){
-        // Delete any existing settings first
-        if(result.status === Office.AsyncResultStatus.Succeeded && result.value.length > 0){
-          result.value.forEach(part => part.deleteAsync(()=>{}));
+      function(r){
+        if(r.status===Office.AsyncResultStatus.Succeeded && r.value.length>0){
+          r.value.forEach(p=>p.deleteAsync(()=>{}));
         }
-        // Write new settings
-        const xml = `<settings xmlns="http://examtimer/settings">${JSON.stringify(settings)}</settings>`;
-        Office.context.document.customXmlParts.addAsync(xml, function(addResult){
-          if(addResult.status === Office.AsyncResultStatus.Succeeded){
-            showSaved();
-          } else {
-            saveViaProperties(settings); // fallback
-          }
+        const xml=`<settings xmlns="http://examtimer/settings">${JSON.stringify(s)}</settings>`;
+        Office.context.document.customXmlParts.addAsync(xml, function(ar){
+          if(ar.status===Office.AsyncResultStatus.Succeeded){ showSaved(); }
+          else{ saveViaDocSettings(s); }
         });
       }
     );
-  } catch(e){
-    saveViaProperties(settings);
-  }
+  }catch(e){ saveViaDocSettings(s); }
 }
 
-function saveViaProperties(settings){
-  // Fallback: use document settings API
-  Office.context.document.settings.set(SETTINGS_KEY, JSON.stringify(settings));
-  Office.context.document.settings.saveAsync(function(result){
-    if(result.status === Office.AsyncResultStatus.Succeeded){
-      showSaved();
-    }
-  });
+function saveViaDocSettings(s){
+  try{
+    Office.context.document.settings.set(SETTINGS_KEY, JSON.stringify(s));
+    Office.context.document.settings.saveAsync(function(r){
+      if(r.status===Office.AsyncResultStatus.Succeeded) showSaved();
+    });
+  }catch(e){ showSaved(); }
 }
 
-/* ─────────────────────────────────────────
-   LOAD settings when the deck opens
-───────────────────────────────────────── */
+function gatherSettings(){
+  return {
+    h:$('inH').value, m:$('inM').value, s:$('inS').value,
+    name:$('nameIn').value,
+    warn:$('warnAt').value, alert:$('alertAt').value,
+    theme:$('themeEl').value,
+    hide:$('hideChk').checked
+  };
+}
+
+/* ─── Load settings ─── */
 function loadSettings(){
-  // Try CustomXmlParts first
-  try {
+  try{
     Office.context.document.customXmlParts.getByNamespaceAsync(
       'http://examtimer/settings',
-      function(result){
-        if(result.status === Office.AsyncResultStatus.Succeeded && result.value.length > 0){
-          result.value[0].getXmlAsync(function(xmlResult){
-            if(xmlResult.status === Office.AsyncResultStatus.Succeeded){
-              try {
-                const xml   = xmlResult.value;
-                const match = xml.match(/<settings[^>]*>([\s\S]*?)<\/settings>/);
-                if(match){
-                  applySettings(JSON.parse(match[1]));
-                  return;
-                }
-              } catch(e){}
+      function(r){
+        if(r.status===Office.AsyncResultStatus.Succeeded && r.value.length>0){
+          r.value[0].getXmlAsync(function(xr){
+            if(xr.status===Office.AsyncResultStatus.Succeeded){
+              try{
+                const match=xr.value.match(/<settings[^>]*>([\s\S]*?)<\/settings>/);
+                if(match){ applySettings(JSON.parse(match[1])); return; }
+              }catch(e){}
             }
-            loadViaProperties(); // fallback
+            loadViaDocSettings();
           });
-        } else {
-          loadViaProperties();
-        }
+        } else { loadViaDocSettings(); }
       }
     );
-  } catch(e){
-    loadViaProperties();
-  }
+  }catch(e){ loadViaDocSettings(); }
 }
 
-function loadViaProperties(){
-  try {
-    const raw = Office.context.document.settings.get(SETTINGS_KEY);
-    if(raw){ applySettings(JSON.parse(raw)); }
-  } catch(e){}
+function loadViaDocSettings(){
+  try{
+    const raw=Office.context.document.settings.get(SETTINGS_KEY);
+    if(raw){ applySettings(JSON.parse(raw)); return; }
+  }catch(e){}
+  restoreFromLocalStorage();
+}
+
+function restoreFromLocalStorage(){
+  try{
+    const raw=localStorage.getItem(SETTINGS_KEY);
+    if(raw) applySettings(JSON.parse(raw));
+  }catch(e){}
 }
 
 function applySettings(s){
   if(!s) return;
-  if(s.h     !== undefined) $('inH').value    = s.h;
-  if(s.m     !== undefined) $('inM').value    = s.m;
-  if(s.s     !== undefined) $('inS').value    = s.s;
-  if(s.name  !== undefined){ $('nameIn').value = s.name; $('examDisplay').textContent = s.name.toUpperCase() || 'EXAM'; }
-  if(s.warn  !== undefined) $('warnAt').value  = s.warn;
-  if(s.alert !== undefined) $('alertAt').value = s.alert;
-  if(s.theme !== undefined){ $('themeEl').value = s.theme; applyTheme(s.theme); }
-  if(s.pin   !== undefined){ $('pinChk').checked = s.pin; togglePin(s.pin); }
-
-  // Update display with loaded duration
-  const h=parseInt(s.h)||0, m=parseInt(s.m)||0, sec=parseInt(s.s)||0;
-  total = h*3600 + m*60 + sec;
-  rem   = total;
-  $('digits').textContent = fmt(rem);
-  $('barFill').style.width = '100%';
+  if(s.h!==undefined)    $('inH').value=s.h;
+  if(s.m!==undefined)    $('inM').value=s.m;
+  if(s.s!==undefined)    $('inS').value=s.s;
+  if(s.name!==undefined){ $('nameIn').value=s.name; $('examDisplay').textContent=s.name.toUpperCase()||'EXAM'; }
+  if(s.warn!==undefined) $('warnAt').value=s.warn;
+  if(s.alert!==undefined)$('alertAt').value=s.alert;
+  if(s.theme!==undefined){ $('themeEl').value=s.theme; applyTheme(s.theme); }
+  if(s.hide!==undefined) { $('hideChk').checked=s.hide; toggleHide(s.hide); }
+  const h=parseInt(s.h)||0,m=parseInt(s.m)||0,sec=parseInt(s.s)||0;
+  total=h*3600+m*60+sec; rem=total;
+  $('digits').textContent=fmt(rem);
+  $('barFill').style.width='100%';
   setStatus('Ready — press Start','');
 }
 
-/* ─────────────────────────────────────────
-   Timer logic
-───────────────────────────────────────── */
+/* ─── Timer ─── */
 function fmt(s){
   const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
   return h>0?`${h}:${pad(m)}:${pad(sec)}`:`${pad(m)}:${pad(sec)}`;
@@ -294,11 +332,8 @@ function beep(f,d){
   }catch(e){}
 }
 
-function flash(n){
-  let i=0,fi=setInterval(()=>{
-    $('flash').classList.toggle('on');
-    if(++i>=n*2)clearInterval(fi);
-  },280);
+function flashScreen(n){
+  let i=0,fi=setInterval(()=>{ $('flash').classList.toggle('on'); if(++i>=n*2)clearInterval(fi); },280);
 }
 
 function repaint(){
@@ -320,9 +355,7 @@ function setStatus(msg,cls){
 function startTimer(){
   if(running)return;
   if(!iv){
-    const h=parseInt($('inH').value)||0;
-    const m=parseInt($('inM').value)||0;
-    const s=parseInt($('inS').value)||0;
+    const h=parseInt($('inH').value)||0,m=parseInt($('inM').value)||0,s=parseInt($('inS').value)||0;
     total=h*3600+m*60+s;
     if(total<=0){setStatus('Set a duration first','warn');return;}
     rem=total;
@@ -336,10 +369,9 @@ function startTimer(){
 
 function tick(){
   rem--;
-  const wS=parseInt($('warnAt').value)*60;
-  const aS=parseInt($('alertAt').value)*60;
-  if(rem===wS){beep(660,0.35);flash(2);setStatus(`⚠ ${$('warnAt').value} min remaining`,'warn');}
-  if(rem===aS){beep(440,0.4);setTimeout(()=>beep(440,0.4),350);flash(4);setStatus(`Only ${$('alertAt').value} min left!`,'danger');}
+  const wS=parseInt($('warnAt').value)*60,aS=parseInt($('alertAt').value)*60;
+  if(rem===wS){beep(660,0.35);flashScreen(2);setStatus(`⚠ ${$('warnAt').value} min remaining`,'warn');}
+  if(rem===aS){beep(440,0.4);setTimeout(()=>beep(440,0.4),350);flashScreen(4);setStatus(`Only ${$('alertAt').value} min left!`,'danger');}
   if(rem<=0){rem=0;finish();return;}
   repaint();
 }
@@ -352,43 +384,34 @@ function finish(){
   $('btnS').disabled=false;$('btnP').disabled=true;
   setStatus("Pens down!",'done');
   beep(523,0.2);setTimeout(()=>beep(659,0.2),260);setTimeout(()=>beep(784,0.5),520);
-  flash(8);
+  flashScreen(8);
 }
 
 function togglePause(){
   if(running){
     clearInterval(iv);iv=null;running=false;
-    $('btnP').textContent='▶ Resume';
-    $('btnS').disabled=false;
+    $('btnP').textContent='▶ Resume';$('btnS').disabled=false;
     setStatus('Paused','warn');
   } else {
-    startTimer();
-    $('btnP').textContent='⏸ Pause';
+    startTimer();$('btnP').textContent='⏸ Pause';
   }
 }
 
 function resetTimer(){
   clearInterval(iv);iv=null;running=false;
-  const h=parseInt($('inH').value)||0;
-  const m=parseInt($('inM').value)||0;
-  const s=parseInt($('inS').value)||0;
-  total=h*3600+m*60+s;
-  rem=total;
-  $('digits').textContent=fmt(rem);
-  $('digits').className='digits';
-  $('barFill').style.width='100%';
-  $('barFill').className='bar-fill';
+  const h=parseInt($('inH').value)||0,m=parseInt($('inM').value)||0,s=parseInt($('inS').value)||0;
+  total=h*3600+m*60+s; rem=total;
+  $('digits').textContent=fmt(rem);$('digits').className='digits';
+  $('barFill').style.width='100%';$('barFill').className='bar-fill';
   $('btnS').disabled=false;$('btnP').disabled=true;
   $('btnP').textContent='⏸ Pause';
   setStatus('Ready — press Start','');
 }
 
-function applyTheme(v){
-  document.body.className=v||'';
-}
+function applyTheme(v){ document.body.className=v||''; }
 
-function togglePin(on){
-  $('controls').classList.toggle('pinned',on);
+function toggleHide(on){
+  $('controls').classList.toggle('auto-hide', on);
 }
 
 function showSaved(){
@@ -397,7 +420,6 @@ function showSaved(){
   setTimeout(()=>b.classList.remove('show'),2500);
 }
 
-/* Keyboard shortcuts */
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
   if(e.key==='s'||e.key==='S'){running?togglePause():startTimer();}
